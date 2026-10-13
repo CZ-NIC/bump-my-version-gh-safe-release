@@ -13,14 +13,7 @@ A thin layer over [bump-my-version](https://github.com/callowayproject/bump-my-v
 
 ## Install
 
-Add it to a development dependency group in `pyproject.toml`:
-
-```toml
-[dependency-groups]
-release = ["bump-my-version-gh-safe-release"]
-```
-
-and `pip install --group release` (pip ≥ 25.1), or run it without installing: `uvx --from bump-my-version-gh-safe-release gh-safe-release`. Needs `git` and an authenticated [`gh`](https://cli.github.com/).
+`pip install bump-my-version-gh-safe-release` into any environment, or let a Makefile install it once per machine (see [Through make](#through-make)). Needs `git` and an authenticated [`gh`](https://cli.github.com/).
 
 ## Use
 
@@ -54,19 +47,20 @@ the `CHANGELOG.md` must contain a `## 1.2.0 (…)` heading.
 
 ## Through make
 
-Keep `make release` as the entry point: the Makefile only installs the tool from the dependency group into a local venv (add `.release-venv` to `.gitignore`, delete it to upgrade) and calls it. Project-specific steps go there too, as prerequisites of `release`.
+Keep `make release` as the entry point: the Makefile only installs the tool once per machine (one venv shared by all your projects, not one per project) and calls it. Project-specific steps go there too, as prerequisites of `release`.
 
 ```make
 # make release PART=patch|minor|major   bump, commit, tag, push both (after CI passed on main)
 # make release                          tag a bump committed already, push the tag
-RELEASE := .release-venv/bin/gh-safe-release
+# Upgrade: $(TOOL)/bin/pip install -U bump-my-version-gh-safe-release
+TOOL := $(HOME)/.local/share/gh-safe-release
 .PHONY: release
 
-release: $(RELEASE)
-	$(RELEASE) $(PART)
+release: $(TOOL)/bin/gh-safe-release
+	$< $(PART)
 
-$(RELEASE):
-	python3 -m venv .release-venv && .release-venv/bin/pip install -q -U pip && .release-venv/bin/pip install -q --group release
+$(TOOL)/bin/gh-safe-release:
+	python3 -m venv $(TOOL) && $(TOOL)/bin/pip install -q bump-my-version-gh-safe-release
 ```
 
 A dry run: `make release PART="patch -n"`.
