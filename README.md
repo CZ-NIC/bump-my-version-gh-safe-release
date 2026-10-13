@@ -52,6 +52,25 @@ replace = "## {new_version} ({now:%Y-%m-%d})"
 
 the `CHANGELOG.md` must contain a `## 1.2.0 (…)` heading.
 
+## Through make
+
+Keep `make release` as the entry point: the Makefile only installs the tool from the dependency group into a local venv (add `.release-venv` to `.gitignore`, delete it to upgrade) and calls it. Project-specific steps go there too, as prerequisites of `release`.
+
+```make
+# make release PART=patch|minor|major   bump, commit, tag, push both (after CI passed on main)
+# make release                          tag a bump committed already, push the tag
+RELEASE := .release-venv/bin/gh-safe-release
+.PHONY: release
+
+release: $(RELEASE)
+	$(RELEASE) $(PART)
+
+$(RELEASE):
+	python3 -m venv .release-venv && .release-venv/bin/pip install -q -U pip && .release-venv/bin/pip install -q --group release
+```
+
+A dry run: `make release PART="patch -n"`.
+
 ## A changelog-driven release
 
 The pattern this tool is built for (see its own `pyproject.toml`):
